@@ -69,6 +69,7 @@ linters:
     gomoddirectives:
       replace-local: true
       tool-forbidden: true
+      go-debug-forbidden: true
       toolchain-forbidden: true
       go-version-pattern: '\d\.\d+'
   exclusions:
