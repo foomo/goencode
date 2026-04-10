@@ -8,4 +8,4 @@ lefthook = "2.1.5"
 # https://mise-tools.jdx.dev/tools/golangci-lint
 golangci-lint = "2.11.4"
 # https://github.com/tinylib/msgp/releases
-"go:github.com/tinylib/msgp" = "1.6.3"
+#"github.com/tinylib/msgp" = "1.6.3"
