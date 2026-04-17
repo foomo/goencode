@@ -113,7 +113,7 @@ outdated:
 ## Show outdated direct dependencies
 upgrade: go.work
 	@echo "〉go mod upgrade"
-	@$(foreach mod,$(GOMODS), (cd $(dir $(mod)) && echo "📂 $(dir $(mod))" && go get -t -u all) &&) true
+	@$(foreach mod,$(GOMODS), (cd $(dir $(mod)) && echo "📂 $(dir $(mod))" && go get -u ./...) &&) true
 
 ### Release
 
