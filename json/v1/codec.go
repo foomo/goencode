@@ -2,19 +2,19 @@ package json
 
 import (
 	"encoding/json"
+
+	encoding "github.com/foomo/goencode"
 )
 
-// Codec is a Codec[T] backed by encoding/json.
+// NewCodec returns a JSON codec for T.
 // It is safe for concurrent use.
-type Codec[T any] struct{}
-
-// NewCodec returns a JSON serializer for T.
-func NewCodec[T any]() Codec[T] { return Codec[T]{} }
-
-func (Codec[T]) Encode(v T) ([]byte, error) {
-	return json.Marshal(v)
-}
-
-func (Codec[T]) Decode(b []byte, v *T) error {
-	return json.Unmarshal(b, v)
+func NewCodec[T any]() encoding.Codec[T, []byte] {
+	return encoding.Codec[T, []byte]{
+		Encode: func(v T) ([]byte, error) {
+			return json.Marshal(v)
+		},
+		Decode: func(b []byte, v *T) error {
+			return json.Unmarshal(b, v)
+		},
+	}
 }

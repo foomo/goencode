@@ -7,7 +7,7 @@ import (
 	"github.com/foomo/goencode/asn1"
 )
 
-func ExampleStreamCodec() {
+func ExampleNewStreamCodec() {
 	c := asn1.NewStreamCodec[int]()
 
 	var buf bytes.Buffer

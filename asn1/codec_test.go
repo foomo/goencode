@@ -6,7 +6,7 @@ import (
 	"github.com/foomo/goencode/asn1"
 )
 
-func ExampleCodec() {
+func ExampleNewCodec() {
 	c := asn1.NewCodec[int]()
 
 	encoded, err := c.Encode(42)
