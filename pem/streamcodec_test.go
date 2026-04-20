@@ -8,7 +8,7 @@ import (
 	"github.com/foomo/goencode/pem"
 )
 
-func ExampleStreamCodec() {
+func ExampleNewStreamCodec() {
 	c := pem.NewStreamCodec()
 
 	block := &stdpem.Block{

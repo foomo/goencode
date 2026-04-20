@@ -7,7 +7,7 @@ import (
 	"github.com/foomo/goencode/hex"
 )
 
-func ExampleStreamCodec() {
+func ExampleNewStreamCodec() {
 	c := hex.NewStreamCodec()
 
 	var buf bytes.Buffer

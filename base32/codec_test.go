@@ -6,7 +6,7 @@ import (
 	"github.com/foomo/goencode/base32"
 )
 
-func ExampleCodec() {
+func ExampleNewCodec() {
 	c := base32.NewCodec()
 
 	encoded, err := c.Encode([]byte("hello"))

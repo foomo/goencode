@@ -7,7 +7,7 @@ import (
 	"github.com/foomo/goencode/base64"
 )
 
-func ExampleStreamCodec() {
+func ExampleNewStreamCodec() {
 	c := base64.NewStreamCodec()
 
 	var buf bytes.Buffer

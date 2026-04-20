@@ -6,7 +6,7 @@ import (
 	"github.com/foomo/goencode/base64"
 )
 
-func ExampleCodec() {
+func ExampleNewCodec() {
 	c := base64.NewCodec()
 
 	encoded, err := c.Encode([]byte("hello"))
