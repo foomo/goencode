@@ -7,7 +7,7 @@ import (
 	"github.com/foomo/goencode/csv"
 )
 
-func ExampleStreamCodec() {
+func ExampleNewStreamCodec() {
 	c := csv.NewStreamCodec()
 
 	records := [][]string{
