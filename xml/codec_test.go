@@ -6,7 +6,7 @@ import (
 	"github.com/foomo/goencode/xml"
 )
 
-func ExampleCodec() {
+func ExampleNewCodec() {
 	type Data struct {
 		XMLName struct{} `xml:"data"`
 		Name    string   `xml:"name"`

@@ -12,8 +12,9 @@
 
 ## Features
 
-- Generic `Codec[T]` and `StreamCodec[T]` interfaces with compile-time type safety
-- Composable compression wrappers (gzip, flate, snappy, zstd, brotli) using the decorator pattern
+- Generic `Codec[S, T]` and `StreamCodec[S]` function-type structs with compile-time type safety
+- Type-safe codec composition via `PipeCodec` (e.g., JSON → gzip, JSON → base64)
+- Standalone compression codecs (gzip, flate, snappy, zstd, brotli) as `Codec[[]byte, []byte]`
 - Stream support via `io.Reader`/`io.Writer` for memory-efficient pipelines
 - Atomic file I/O with temp file + rename
 - Zero dependencies in the core module
@@ -24,36 +25,50 @@
 go get github.com/foomo/goencode
 ```
 
-## Core Interfaces
+## Core Types
 
 ```go
-// Byte-oriented
-type Codec[T any] interface {
-Encode(v T) ([]byte, error)
-Decode(b []byte, v *T) error
+// Function types
+type Encoder[S, T any] func(s S) (T, error)
+type Decoder[S, T any] func(t T, s *S) error
+
+// Byte-oriented codec bundle
+type Codec[S, T any] struct {
+    Encode Encoder[S, T]
+    Decode Decoder[S, T]
 }
 
-// Stream-oriented
-type StreamCodec[T any] interface {
-Encode(w io.Writer, v T) error
-Decode(r io.Reader, v *T) error
+// Stream function types
+type StreamEncoder[S any] func(w io.Writer, s S) error
+type StreamDecoder[S any] func(r io.Reader, s *S) error
+
+// Stream-oriented codec bundle
+type StreamCodec[S any] struct {
+    Encode StreamEncoder[S]
+    Decode StreamDecoder[S]
 }
+
+// Composition
+func PipeCodec[A, B, C any](first Codec[A, B], second Codec[B, C]) Codec[A, C]
 ```
 
 ## Quick Start
 
 ```go
 // Basic JSON encode/decode
-c := json.NewCodec[User]()
+c := json.NewCodec[User]()           // Codec[User, []byte]
 b, err := c.Encode(User{Name: "Alice", Age: 30})
 var u User
 err = c.Decode(b, &u)
 
-// Compose with compression
-c := gzip.NewCodec[User](json.NewCodec[User]())
+// Compose with compression via PipeCodec
+c := goencode.PipeCodec(json.NewCodec[User](), gzip.NewCodec())
+
+// Chain multiple codecs: JSON → base64
+c := goencode.PipeCodec(json.NewCodec[User](), base64.NewCodec())
 
 // Add atomic file persistence
-fc := file.NewCodec[User](gzip.NewCodec[User](json.NewCodec[User]()))
+fc := file.NewCodec(goencode.PipeCodec(json.NewCodec[User](), gzip.NewCodec()))
 err := fc.Encode("/tmp/user.json.gz", user)
 ```
 

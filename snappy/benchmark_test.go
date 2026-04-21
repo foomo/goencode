@@ -3,13 +3,14 @@ package snappy_test
 import (
 	"testing"
 
+	goencode "github.com/foomo/goencode"
 	"github.com/foomo/goencode/internal/testdata"
 	json "github.com/foomo/goencode/json/v1"
 	"github.com/foomo/goencode/snappy"
 )
 
 func BenchmarkCodec(b *testing.B) {
-	c := snappy.NewCodec(json.NewCodec[*testdata.User]())
+	c := goencode.PipeCodec(json.NewCodec[*testdata.User](), snappy.NewCodec())
 
 	b.Run("encode", func(b *testing.B) {
 		v := testdata.NewUser()

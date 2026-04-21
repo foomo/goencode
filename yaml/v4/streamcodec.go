@@ -1,26 +1,23 @@
-package toml
+package yaml
 
 import (
 	"io"
 
 	encoding "github.com/foomo/goencode"
-
-	"github.com/BurntSushi/toml"
+	"go.yaml.in/yaml/v4"
 )
 
-// StreamEncoder encodes T to a TOML stream.
+// StreamEncoder encodes T to a YAML v4 stream.
 func StreamEncoder[T any](w io.Writer, v T) error {
-	return toml.NewEncoder(w).Encode(v)
+	return yaml.NewEncoder(w).Encode(v)
 }
 
-// StreamDecoder decodes T from a TOML stream.
+// StreamDecoder decodes T from a YAML v4 stream.
 func StreamDecoder[T any](r io.Reader, v *T) error {
-	_, err := toml.NewDecoder(r).Decode(v)
-
-	return err
+	return yaml.NewDecoder(r).Decode(v)
 }
 
-// NewStreamCodec returns a TOML stream codec for T.
+// NewStreamCodec returns a YAML v4 stream codec for T.
 // It is safe for concurrent use.
 func NewStreamCodec[T any]() encoding.StreamCodec[T] {
 	return encoding.StreamCodec[T]{

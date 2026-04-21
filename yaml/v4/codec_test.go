@@ -6,7 +6,7 @@ import (
 	"github.com/foomo/goencode/yaml/v4"
 )
 
-func ExampleCodec() {
+func ExampleNewCodec() {
 	type Data struct {
 		Name string
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/foomo/goencode/xml"
 )
 
-func ExampleStreamCodec() {
+func ExampleNewStreamCodec() {
 	type Data struct {
 		XMLName struct{} `xml:"data"`
 		Name    string   `xml:"name"`

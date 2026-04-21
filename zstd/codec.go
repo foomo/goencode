@@ -5,16 +5,8 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-// Codec is a Codec[T] that applies Zstandard compression on top of another Codec[T].
-// It is safe for concurrent use.
-type Codec[T any] struct {
-	codec          encoding.Codec[T]
-	level          zstd.EncoderLevel
-	maxDecodedSize int64
-}
-
-// NewCodec returns a Zstandard compression codec that delegates serialization to codec.
-func NewCodec[T any](codec encoding.Codec[T], opts ...Option) *Codec[T] {
+// NewEncoder returns a Zstandard compression encoder.
+func NewEncoder(opts ...Option) encoding.Encoder[[]byte, []byte] {
 	o := options{
 		level: zstd.SpeedDefault,
 	}
@@ -22,44 +14,52 @@ func NewCodec[T any](codec encoding.Codec[T], opts ...Option) *Codec[T] {
 		opt(&o)
 	}
 
-	return &Codec[T]{
-		codec:          codec,
-		level:          o.level,
-		maxDecodedSize: o.maxDecodedSize,
+	return func(data []byte) ([]byte, error) {
+		enc, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(o.level))
+		if err != nil {
+			return nil, err
+		}
+		defer enc.Close()
+
+		return enc.EncodeAll(data, nil), nil
 	}
 }
 
-func (c *Codec[T]) Encode(v T) ([]byte, error) {
-	b, err := c.codec.Encode(v)
-	if err != nil {
-		return nil, err
+// NewDecoder returns a Zstandard decompression decoder.
+func NewDecoder(opts ...Option) encoding.Decoder[[]byte, []byte] {
+	o := options{}
+	for _, opt := range opts {
+		opt(&o)
 	}
 
-	enc, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(c.level))
-	if err != nil {
-		return nil, err
-	}
-	defer enc.Close()
+	return func(data []byte, v *[]byte) error {
+		dopts := []zstd.DOption{}
+		if o.maxDecodedSize > 0 {
+			dopts = append(dopts, zstd.WithDecoderMaxMemory(uint64(o.maxDecodedSize)))
+		}
 
-	return enc.EncodeAll(b, nil), nil
+		dec, err := zstd.NewReader(nil, dopts...)
+		if err != nil {
+			return err
+		}
+		defer dec.Close()
+
+		decoded, err := dec.DecodeAll(data, nil)
+		if err != nil {
+			return err
+		}
+
+		*v = decoded
+
+		return nil
+	}
 }
 
-func (c *Codec[T]) Decode(b []byte, v *T) error {
-	opts := []zstd.DOption{}
-	if c.maxDecodedSize > 0 {
-		opts = append(opts, zstd.WithDecoderMaxMemory(uint64(c.maxDecodedSize)))
+// NewCodec returns a Zstandard compression codec.
+// It is safe for concurrent use.
+func NewCodec(opts ...Option) encoding.Codec[[]byte, []byte] {
+	return encoding.Codec[[]byte, []byte]{
+		Encode: NewEncoder(opts...),
+		Decode: NewDecoder(opts...),
 	}
-
-	dec, err := zstd.NewReader(nil, opts...)
-	if err != nil {
-		return err
-	}
-	defer dec.Close()
-
-	data, err := dec.DecodeAll(b, nil)
-	if err != nil {
-		return err
-	}
-
-	return c.codec.Decode(data, v)
 }

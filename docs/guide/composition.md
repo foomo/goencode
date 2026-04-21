@@ -1,13 +1,14 @@
 # Composing Codecs
 
-Compression codecs in goencode follow the decorator pattern — they wrap an inner `Codec[T]` to add a compression layer. This lets you compose serialization and compression in a single line.
+Codecs in goencode compose via `PipeCodec` — a type-safe function that chains two codecs together. Compression codecs are standalone `Codec[[]byte, []byte]`, so you pipe a serialization codec into a compression codec to get a single composed codec.
 
 ## Basic Composition
 
-A compression codec takes any `Codec[T]` as its first argument:
+`PipeCodec` chains two codecs where the output type of the first matches the input type of the second:
 
 ```go
 import (
+    "github.com/foomo/goencode"
     "github.com/foomo/goencode/gzip"
     "github.com/foomo/goencode/json/v1"
 )
@@ -18,7 +19,7 @@ type User struct {
 }
 
 // JSON serialization + gzip compression
-c := gzip.NewCodec[User](json.NewCodec[User]()) // [!code highlight]
+c := goencode.PipeCodec(json.NewCodec[User](), gzip.NewCodec()) // [!code highlight]
 
 b, err := c.Encode(User{Name: "Alice", Age: 30})
 // b contains gzip-compressed JSON
@@ -28,60 +29,73 @@ err = c.Decode(b, &u)
 // u == User{Name: "Alice", Age: 30}
 ```
 
-The flow is: `Encode` serializes with the inner codec, then compresses. `Decode` decompresses, then deserializes.
+The flow is: `Encode` serializes with the first codec, then compresses with the second. `Decode` decompresses with the second, then deserializes with the first.
 
 ## Choosing a Format
 
 ::: code-group
 
 ```go [JSON + gzip]
-c := gzip.NewCodec[User](json.NewCodec[User]())
+c := goencode.PipeCodec(json.NewCodec[User](), gzip.NewCodec())
 ```
 
 ```go [XML + flate]
-c := flate.NewCodec[User](xml.NewCodec[User]())
+c := goencode.PipeCodec(xml.NewCodec[User](), flate.NewCodec())
 ```
 
 ```go [Gob + snappy]
-c := snappy.NewCodec[User](gob.NewCodec[User]())
+c := goencode.PipeCodec(gob.NewCodec[User](), snappy.NewCodec())
 ```
 
 ```go [JSON + zstd]
-c := zstd.NewCodec[User](json.NewCodec[User]())
+c := goencode.PipeCodec(json.NewCodec[User](), zstd.NewCodec())
 ```
 
 :::
 
 ## Compression Options
 
-gzip, flate, and zstd accept options to tune compression level:
+gzip, flate, zstd, and brotli accept options to tune compression level:
 
 ```go
 // gzip with best compression
-c := gzip.NewCodec[User](
+c := goencode.PipeCodec(
     json.NewCodec[User](),
-    gzip.WithLevel(gzip.BestCompression), // [!code highlight]
+    gzip.NewCodec(gzip.WithLevel(gzip.BestCompression)), // [!code highlight]
 )
 
 // flate with best speed
-c := flate.NewCodec[User](
+c := goencode.PipeCodec(
     json.NewCodec[User](),
-    flate.WithLevel(flate.BestSpeed), // [!code highlight]
+    flate.NewCodec(flate.WithLevel(flate.BestSpeed)), // [!code highlight]
 )
 
 // zstd with best compression
-c := zstd.NewCodec[User](
+c := goencode.PipeCodec(
     json.NewCodec[User](),
-    zstd.WithLevel(zstd.SpeedBestCompression), // [!code highlight]
+    zstd.NewCodec(zstd.WithLevel(zstd.SpeedBestCompression)), // [!code highlight]
+)
+```
+
+## Chaining Multiple Codecs
+
+`PipeCodec` returns a `Codec`, so you can chain more than two:
+
+```go
+// JSON → gzip → base64
+c := goencode.PipeCodec(
+    goencode.PipeCodec(json.NewCodec[User](), gzip.NewCodec()),
+    base64.NewCodec(),
 )
 ```
 
 ## Adding File Persistence
 
-The `file` codec wraps any `Codec[T]` to read and write files atomically:
+The `file` codec wraps any `Codec[T, []byte]` to read and write files atomically:
 
 ```go
 import (
+    "github.com/foomo/goencode"
     "github.com/foomo/goencode/file"
     "github.com/foomo/goencode/gzip"
     "github.com/foomo/goencode/json/v1"
@@ -94,7 +108,7 @@ type Config struct {
 
 // JSON + gzip + atomic file I/O
 fc := file.NewCodec[Config]( // [!code highlight]
-    gzip.NewCodec[Config](json.NewCodec[Config]()), // [!code highlight]
+    goencode.PipeCodec(json.NewCodec[Config](), gzip.NewCodec()), // [!code highlight]
     file.WithPermissions(0o600),
 ) // [!code highlight]
 
@@ -106,24 +120,16 @@ var loaded Config
 err = fc.Decode("/etc/myapp/config.json.gz", &loaded)
 ```
 
-The composition layers from outside in: `file` → `gzip` → `json` → `T`.
+The composition layers: `file` wraps the piped codec (`json` → `gzip`).
 
-## Stream Composition
+## Standalone Encoder/Decoder Composition
 
-The same pattern works with `StreamCodec[T]`:
+You can also compose individual encoder and decoder functions:
 
 ```go
-import (
-    "github.com/foomo/goencode/gzip"
-    "github.com/foomo/goencode/json/v1"
-)
+// Compose encoders: User → []byte → []byte
+enc := goencode.PipeEncoder(json.Encoder[User], gzip.NewEncoder())
 
-sc := gzip.NewStreamCodec[User](json.NewStreamCodec[User]()) // [!code highlight]
-
-// Write compressed JSON to any io.Writer
-err := sc.Encode(writer, user)
-
-// Read compressed JSON from any io.Reader
-var u User
-err = sc.Decode(reader, &u)
+// Compose decoders: []byte → []byte → User
+dec := goencode.PipeDecoder(json.Decoder[User], gzip.NewDecoder())
 ```

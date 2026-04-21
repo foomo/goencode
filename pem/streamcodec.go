@@ -4,20 +4,17 @@ import (
 	stdpem "encoding/pem"
 	"errors"
 	"io"
+
+	encoding "github.com/foomo/goencode"
 )
 
-// StreamCodec is a StreamCodec[*pem.Block] backed by encoding/pem.
-// It is safe for concurrent use.
-type StreamCodec struct{}
-
-// NewStreamCodec returns a PEM stream serializer.
-func NewStreamCodec() *StreamCodec { return &StreamCodec{} }
-
-func (StreamCodec) Encode(w io.Writer, v *stdpem.Block) error {
+// StreamEncoder encodes a PEM block to a stream.
+func StreamEncoder(w io.Writer, v *stdpem.Block) error {
 	return stdpem.Encode(w, v)
 }
 
-func (StreamCodec) Decode(r io.Reader, v **stdpem.Block) error {
+// StreamDecoder decodes a PEM block from a stream.
+func StreamDecoder(r io.Reader, v **stdpem.Block) error {
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return err
@@ -31,4 +28,13 @@ func (StreamCodec) Decode(r io.Reader, v **stdpem.Block) error {
 	*v = block
 
 	return nil
+}
+
+// NewStreamCodec returns a PEM stream codec.
+// It is safe for concurrent use.
+func NewStreamCodec() encoding.StreamCodec[*stdpem.Block] {
+	return encoding.StreamCodec[*stdpem.Block]{
+		Encode: StreamEncoder,
+		Decode: StreamDecoder,
+	}
 }

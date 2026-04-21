@@ -7,7 +7,7 @@ import (
 	"github.com/foomo/goencode/gob"
 )
 
-func ExampleStreamCodec() {
+func ExampleNewStreamCodec() {
 	type Data struct {
 		Name string
 	}

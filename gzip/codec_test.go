@@ -3,16 +3,17 @@ package gzip_test
 import (
 	"fmt"
 
+	goencode "github.com/foomo/goencode"
 	"github.com/foomo/goencode/gzip"
 	json "github.com/foomo/goencode/json/v1"
 )
 
-func ExampleCodec() {
+func ExampleNewCodec() {
 	type Data struct {
 		Name string
 	}
 
-	c := gzip.NewCodec(json.NewCodec[Data]())
+	c := goencode.PipeCodec(json.NewCodec[Data](), gzip.NewCodec())
 
 	encoded, err := c.Encode(Data{Name: "example-123"})
 	if err != nil {

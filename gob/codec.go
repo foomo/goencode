@@ -4,17 +4,12 @@ import (
 	"bytes"
 	stdgob "encoding/gob"
 
+	encoding "github.com/foomo/goencode"
 	"github.com/foomo/goencode/internal/sync"
 )
 
-// Codec is a Codec[T] backed by encoding/gob.
-// It is safe for concurrent use.
-type Codec[T any] struct{}
-
-// NewCodec returns a GOB serializer for T.
-func NewCodec[T any]() *Codec[T] { return &Codec[T]{} }
-
-func (Codec[T]) Encode(v T) ([]byte, error) {
+// Encoder encodes T to gob bytes.
+func Encoder[T any](v T) ([]byte, error) {
 	buf := sync.Get()
 	defer sync.Put(buf)
 
@@ -25,6 +20,16 @@ func (Codec[T]) Encode(v T) ([]byte, error) {
 	return append([]byte(nil), buf.Bytes()...), nil
 }
 
-func (Codec[T]) Decode(b []byte, v *T) error {
+// Decoder decodes gob bytes into T.
+func Decoder[T any](b []byte, v *T) error {
 	return stdgob.NewDecoder(bytes.NewReader(b)).Decode(v)
+}
+
+// NewCodec returns a GOB codec for T.
+// It is safe for concurrent use.
+func NewCodec[T any]() encoding.Codec[T, []byte] {
+	return encoding.Codec[T, []byte]{
+		Encode: Encoder[T],
+		Decode: Decoder[T],
+	}
 }

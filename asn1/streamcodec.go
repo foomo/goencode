@@ -3,16 +3,12 @@ package asn1
 import (
 	stdasn1 "encoding/asn1"
 	"io"
+
+	encoding "github.com/foomo/goencode"
 )
 
-// StreamCodec is a StreamCodec[T] backed by encoding/asn1.
-// It is safe for concurrent use.
-type StreamCodec[T any] struct{}
-
-// NewStreamCodec returns an ASN1 stream serializer for T.
-func NewStreamCodec[T any]() *StreamCodec[T] { return &StreamCodec[T]{} }
-
-func (StreamCodec[T]) Encode(w io.Writer, v T) error {
+// StreamEncoder encodes T to an ASN.1 stream.
+func StreamEncoder[T any](w io.Writer, v T) error {
 	data, err := stdasn1.Marshal(v)
 	if err != nil {
 		return err
@@ -23,7 +19,8 @@ func (StreamCodec[T]) Encode(w io.Writer, v T) error {
 	return err
 }
 
-func (StreamCodec[T]) Decode(r io.Reader, v *T) error {
+// StreamDecoder decodes T from an ASN.1 stream.
+func StreamDecoder[T any](r io.Reader, v *T) error {
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return err
@@ -32,4 +29,13 @@ func (StreamCodec[T]) Decode(r io.Reader, v *T) error {
 	_, err = stdasn1.Unmarshal(data, v)
 
 	return err
+}
+
+// NewStreamCodec returns an ASN.1 stream codec for T.
+// It is safe for concurrent use.
+func NewStreamCodec[T any]() encoding.StreamCodec[T] {
+	return encoding.StreamCodec[T]{
+		Encode: StreamEncoder[T],
+		Decode: StreamDecoder[T],
+	}
 }

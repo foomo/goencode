@@ -8,16 +8,16 @@ import (
 	encoding "github.com/foomo/goencode"
 )
 
-// Codec encodes T to a file and decodes T from a file using an underlying Codec[T].
+// Codec encodes T to a file and decodes T from a file using an underlying Codec[T, []byte].
 // Writes are atomic: data is written to a temporary file and renamed into place.
 // It is safe for concurrent use.
 type Codec[T any] struct {
-	codec encoding.Codec[T]
+	codec encoding.Codec[T, []byte]
 	perm  os.FileMode
 }
 
 // NewCodec returns a file codec that delegates serialization to codec.
-func NewCodec[T any](codec encoding.Codec[T], opts ...Option) *Codec[T] {
+func NewCodec[T any](codec encoding.Codec[T, []byte], opts ...Option) *Codec[T] {
 	o := options{
 		perm: 0o644,
 	}

@@ -1,22 +1,15 @@
 package brotli
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/andybalholm/brotli"
 	encoding "github.com/foomo/goencode"
 )
 
-// StreamCodec is a StreamCodec[T] that applies Brotli compression on top of another StreamCodec[T].
-// It is safe for concurrent use.
-type StreamCodec[T any] struct {
-	codec          encoding.StreamCodec[T]
-	level          int
-	maxDecodedSize int64
-}
-
-// NewStreamCodec returns a Brotli compression stream codec that delegates serialization to codec.
-func NewStreamCodec[T any](codec encoding.StreamCodec[T], opts ...Option) *StreamCodec[T] {
+// NewStreamEncoder returns a Brotli compression stream encoder.
+func NewStreamEncoder(opts ...Option) encoding.StreamEncoder[[]byte] {
 	o := options{
 		level: brotli.DefaultCompression,
 	}
@@ -24,31 +17,53 @@ func NewStreamCodec[T any](codec encoding.StreamCodec[T], opts ...Option) *Strea
 		opt(&o)
 	}
 
-	return &StreamCodec[T]{
-		codec:          codec,
-		level:          o.level,
-		maxDecodedSize: o.maxDecodedSize,
+	return func(w io.Writer, data []byte) error {
+		bw := brotli.NewWriterLevel(w, o.level)
+
+		if _, err := bw.Write(data); err != nil {
+			bw.Close()
+			return err
+		}
+
+		return bw.Close()
 	}
 }
 
-func (c *StreamCodec[T]) Encode(w io.Writer, v T) error {
-	bw := brotli.NewWriterLevel(w, c.level)
-
-	if err := c.codec.Encode(bw, v); err != nil {
-		bw.Close()
-		return err
+// NewStreamDecoder returns a Brotli decompression stream decoder.
+func NewStreamDecoder(opts ...Option) encoding.StreamDecoder[[]byte] {
+	o := options{}
+	for _, opt := range opts {
+		opt(&o)
 	}
 
-	return bw.Close()
+	return func(r io.Reader, v *[]byte) error {
+		br := brotli.NewReader(r)
+
+		var src io.Reader = br
+		if o.maxDecodedSize > 0 {
+			src = io.LimitReader(br, o.maxDecodedSize+1)
+		}
+
+		data, err := io.ReadAll(src)
+		if err != nil {
+			return err
+		}
+
+		if o.maxDecodedSize > 0 && int64(len(data)) > o.maxDecodedSize {
+			return fmt.Errorf("brotli: decompressed size exceeds limit of %d bytes", o.maxDecodedSize)
+		}
+
+		*v = data
+
+		return nil
+	}
 }
 
-func (c *StreamCodec[T]) Decode(r io.Reader, v *T) error {
-	br := brotli.NewReader(r)
-
-	var src io.Reader = br
-	if c.maxDecodedSize > 0 {
-		src = io.LimitReader(br, c.maxDecodedSize+1)
+// NewStreamCodec returns a Brotli compression stream codec.
+// It is safe for concurrent use.
+func NewStreamCodec(opts ...Option) encoding.StreamCodec[[]byte] {
+	return encoding.StreamCodec[[]byte]{
+		Encode: NewStreamEncoder(opts...),
+		Decode: NewStreamDecoder(opts...),
 	}
-
-	return c.codec.Decode(src, v)
 }

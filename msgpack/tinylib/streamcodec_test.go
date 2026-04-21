@@ -8,7 +8,7 @@ import (
 	"github.com/foomo/goencode/msgpack/tinylib/testdata"
 )
 
-func ExampleStreamCodec() {
+func ExampleNewStreamCodec() {
 	c := msgpack.NewStreamCodec[testdata.User]()
 
 	var buf bytes.Buffer

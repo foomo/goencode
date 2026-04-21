@@ -2,23 +2,20 @@ package base32
 
 import (
 	stdbase32 "encoding/base32"
+
+	encoding "github.com/foomo/goencode"
 )
 
-// Codec is a Codec[[]byte] backed by encoding/base32.
-// It is safe for concurrent use.
-type Codec struct{}
-
-// NewCodec returns a Base32 serializer.
-func NewCodec() *Codec { return &Codec{} }
-
-func (Codec) Encode(v []byte) ([]byte, error) {
+// Encoder encodes bytes to Base32.
+func Encoder(v []byte) ([]byte, error) {
 	dst := make([]byte, stdbase32.StdEncoding.EncodedLen(len(v)))
 	stdbase32.StdEncoding.Encode(dst, v)
 
 	return dst, nil
 }
 
-func (Codec) Decode(b []byte, v *[]byte) error {
+// Decoder decodes Base32 bytes.
+func Decoder(b []byte, v *[]byte) error {
 	dst := make([]byte, stdbase32.StdEncoding.DecodedLen(len(b)))
 
 	n, err := stdbase32.StdEncoding.Decode(dst, b)
@@ -29,4 +26,13 @@ func (Codec) Decode(b []byte, v *[]byte) error {
 	*v = dst[:n]
 
 	return nil
+}
+
+// NewCodec returns a Base32 codec.
+// It is safe for concurrent use.
+func NewCodec() encoding.Codec[[]byte, []byte] {
+	return encoding.Codec[[]byte, []byte]{
+		Encode: Encoder,
+		Decode: Decoder,
+	}
 }

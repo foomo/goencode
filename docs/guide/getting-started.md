@@ -13,41 +13,53 @@ These packages have external dependencies and require their own `go get`:
 
 | Package | Install |
 |---------|---------|
-| `json2` | `go get github.com/foomo/goencode/json2` |
+| `json/v2` | `go get github.com/foomo/goencode/json/v2` |
 | `yaml/v2` | `go get github.com/foomo/goencode/yaml/v2` |
 | `yaml/v3` | `go get github.com/foomo/goencode/yaml/v3` |
 | `yaml/v4` | `go get github.com/foomo/goencode/yaml/v4` |
+| `toml` | `go get github.com/foomo/goencode/toml` |
 | `snappy` | `go get github.com/foomo/goencode/snappy` |
 | `zstd` | `go get github.com/foomo/goencode/zstd` |
+| `brotli` | `go get github.com/foomo/goencode/brotli` |
+| `msgpack/tinylib` | `go get github.com/foomo/goencode/msgpack/tinylib` |
+| `msgpack/vmihailenco` | `go get github.com/foomo/goencode/msgpack/vmihailenco` |
 :::
 
-## Core Interfaces
+## Core Types
 
-goencode defines two generic interfaces at the root package.
+goencode defines function types and struct bundles at the root package.
 
-### Codec[T] — byte-oriented
+### Codec[S, T] — byte-oriented
 
 ```go
-// Codec encodes T to []byte and decodes []byte back to T.
-type Codec[T any] interface {
-    Encode(v T) ([]byte, error)
-    Decode(b []byte, v *T) error
+// Function types
+type Encoder[S, T any] func(s S) (T, error)
+type Decoder[S, T any] func(t T, s *S) error
+
+// Codec bundles an Encoder and Decoder pair.
+type Codec[S, T any] struct {
+    Encode Encoder[S, T]
+    Decode Decoder[S, T]
 }
 ```
 
-Use `Codec[T]` when you need the encoded result as a byte slice — for example, storing in a database, sending over a message queue, or passing to another function.
+Use `Codec[S, T]` when you need the encoded result as a value — for example, `Codec[User, []byte]` for serialization or `Codec[[]byte, []byte]` for compression. Codecs compose via `PipeCodec` for type-safe chaining.
 
-### StreamCodec[T] — io.Reader/io.Writer-oriented
+### StreamCodec[S] — io.Reader/io.Writer-oriented
 
 ```go
-// StreamCodec encodes T to an io.Writer and decodes T from an io.Reader.
-type StreamCodec[T any] interface {
-    Encode(w io.Writer, v T) error
-    Decode(r io.Reader, v *T) error
+// Stream function types
+type StreamEncoder[S any] func(w io.Writer, s S) error
+type StreamDecoder[S any] func(r io.Reader, s *S) error
+
+// StreamCodec bundles a StreamEncoder and StreamDecoder pair.
+type StreamCodec[S any] struct {
+    Encode StreamEncoder[S]
+    Decode StreamDecoder[S]
 }
 ```
 
-Use `StreamCodec[T]` when working with streams — HTTP request/response bodies, files, network connections, or any `io.Reader`/`io.Writer`.
+Use `StreamCodec[S]` when working with streams — HTTP request/response bodies, files, network connections, or any `io.Reader`/`io.Writer`.
 
 ## Minimal Example
 
@@ -87,4 +99,4 @@ func main() {
 
 ## Concurrency Safety
 
-All codecs in this library are safe for concurrent use. Serialization codecs like `json.Codec[T]` are stateless zero-size structs; compression wrappers hold only immutable configuration. You can safely share a single codec instance across goroutines.
+All codecs in this library are safe for concurrent use. Codec structs bundle pure function values with no shared mutable state. You can safely share a single codec instance across goroutines.

@@ -7,7 +7,7 @@ import (
 	"github.com/foomo/goencode/msgpack/tinylib/testdata"
 )
 
-func ExampleCodec() {
+func ExampleNewCodec() {
 	c := msgpack.NewCodec[testdata.User]()
 
 	encoded, err := c.Encode(*testdata.NewUserTinyLib())

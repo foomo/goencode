@@ -1,5 +1,4 @@
 package goencode
 
-type Decoder[T any] interface {
-	Decode(v any) error
-}
+// Decoder decodes target T back into source S.
+type Decoder[S, T any] func(t T, s *S) error

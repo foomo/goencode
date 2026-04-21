@@ -4,17 +4,12 @@ import (
 	"bytes"
 	stdcsv "encoding/csv"
 
+	encoding "github.com/foomo/goencode"
 	"github.com/foomo/goencode/internal/sync"
 )
 
-// Codec is a Codec[[][]string] backed by encoding/csv.
-// It is safe for concurrent use.
-type Codec struct{}
-
-// NewCodec returns a CSV serializer.
-func NewCodec() *Codec { return &Codec{} }
-
-func (Codec) Encode(v [][]string) ([]byte, error) {
+// Encoder encodes [][]string to CSV bytes.
+func Encoder(v [][]string) ([]byte, error) {
 	buf := sync.Get()
 	defer sync.Put(buf)
 
@@ -32,7 +27,8 @@ func (Codec) Encode(v [][]string) ([]byte, error) {
 	return append([]byte(nil), buf.Bytes()...), nil
 }
 
-func (Codec) Decode(b []byte, v *[][]string) error {
+// Decoder decodes CSV bytes into [][]string.
+func Decoder(b []byte, v *[][]string) error {
 	records, err := stdcsv.NewReader(bytes.NewReader(b)).ReadAll()
 	if err != nil {
 		return err
@@ -41,4 +37,13 @@ func (Codec) Decode(b []byte, v *[][]string) error {
 	*v = records
 
 	return nil
+}
+
+// NewCodec returns a CSV codec for [][]string.
+// It is safe for concurrent use.
+func NewCodec() encoding.Codec[[][]string, []byte] {
+	return encoding.Codec[[][]string, []byte]{
+		Encode: Encoder,
+		Decode: Decoder,
+	}
 }

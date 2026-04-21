@@ -7,7 +7,7 @@ import (
 	"github.com/foomo/goencode/toml"
 )
 
-func ExampleStreamCodec() {
+func ExampleNewStreamCodec() {
 	type Data struct {
 		Name string
 	}

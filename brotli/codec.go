@@ -10,16 +10,8 @@ import (
 	"github.com/foomo/goencode/internal/sync"
 )
 
-// Codec is a Codec[T] that applies Brotli compression on top of another Codec[T].
-// It is safe for concurrent use.
-type Codec[T any] struct {
-	codec          encoding.Codec[T]
-	level          int
-	maxDecodedSize int64
-}
-
-// NewCodec returns a Brotli compression codec that delegates serialization to codec.
-func NewCodec[T any](codec encoding.Codec[T], opts ...Option) *Codec[T] {
+// NewEncoder returns a Brotli compression encoder.
+func NewEncoder(opts ...Option) encoding.Encoder[[]byte, []byte] {
 	o := options{
 		level: brotli.DefaultCompression,
 	}
@@ -27,51 +19,59 @@ func NewCodec[T any](codec encoding.Codec[T], opts ...Option) *Codec[T] {
 		opt(&o)
 	}
 
-	return &Codec[T]{
-		codec:          codec,
-		level:          o.level,
-		maxDecodedSize: o.maxDecodedSize,
+	return func(data []byte) ([]byte, error) {
+		buf := sync.Get()
+		defer sync.Put(buf)
+
+		w := brotli.NewWriterLevel(buf, o.level)
+
+		if _, err := w.Write(data); err != nil {
+			return nil, err
+		}
+
+		if err := w.Close(); err != nil {
+			return nil, err
+		}
+
+		return append([]byte(nil), buf.Bytes()...), nil
 	}
 }
 
-func (c *Codec[T]) Encode(v T) ([]byte, error) {
-	b, err := c.codec.Encode(v)
-	if err != nil {
-		return nil, err
+// NewDecoder returns a Brotli decompression decoder.
+func NewDecoder(opts ...Option) encoding.Decoder[[]byte, []byte] {
+	o := options{}
+	for _, opt := range opts {
+		opt(&o)
 	}
 
-	buf := sync.Get()
-	defer sync.Put(buf)
+	return func(data []byte, v *[]byte) error {
+		r := brotli.NewReader(bytes.NewReader(data))
 
-	w := brotli.NewWriterLevel(buf, c.level)
+		var src io.Reader = r
+		if o.maxDecodedSize > 0 {
+			src = io.LimitReader(r, o.maxDecodedSize+1)
+		}
 
-	if _, err := w.Write(b); err != nil {
-		return nil, err
+		decoded, err := io.ReadAll(src)
+		if err != nil {
+			return err
+		}
+
+		if o.maxDecodedSize > 0 && int64(len(decoded)) > o.maxDecodedSize {
+			return fmt.Errorf("brotli: decompressed size exceeds limit of %d bytes", o.maxDecodedSize)
+		}
+
+		*v = decoded
+
+		return nil
 	}
-
-	if err := w.Close(); err != nil {
-		return nil, err
-	}
-
-	return append([]byte(nil), buf.Bytes()...), nil
 }
 
-func (c *Codec[T]) Decode(b []byte, v *T) error {
-	r := brotli.NewReader(bytes.NewReader(b))
-
-	var src io.Reader = r
-	if c.maxDecodedSize > 0 {
-		src = io.LimitReader(r, c.maxDecodedSize+1)
+// NewCodec returns a Brotli compression codec.
+// It is safe for concurrent use.
+func NewCodec(opts ...Option) encoding.Codec[[]byte, []byte] {
+	return encoding.Codec[[]byte, []byte]{
+		Encode: NewEncoder(opts...),
+		Decode: NewDecoder(opts...),
 	}
-
-	data, err := io.ReadAll(src)
-	if err != nil {
-		return err
-	}
-
-	if c.maxDecodedSize > 0 && int64(len(data)) > c.maxDecodedSize {
-		return fmt.Errorf("brotli: decompressed size exceeds limit of %d bytes", c.maxDecodedSize)
-	}
-
-	return c.codec.Decode(data, v)
 }

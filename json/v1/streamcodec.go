@@ -3,19 +3,25 @@ package json
 import (
 	"encoding/json"
 	"io"
+
+	encoding "github.com/foomo/goencode"
 )
 
-// StreamCodec is a StreamCodec[T] backed by encoding/json.
-// It is safe for concurrent use.
-type StreamCodec[T any] struct{}
-
-// NewStreamCodec returns a JSON stream serializer for T.
-func NewStreamCodec[T any]() *StreamCodec[T] { return &StreamCodec[T]{} }
-
-func (StreamCodec[T]) Encode(w io.Writer, v T) error {
+// StreamEncoder encodes T to a JSON stream.
+func StreamEncoder[T any](w io.Writer, v T) error {
 	return json.NewEncoder(w).Encode(v)
 }
 
-func (StreamCodec[T]) Decode(r io.Reader, v *T) error {
+// StreamDecoder decodes T from a JSON stream.
+func StreamDecoder[T any](r io.Reader, v *T) error {
 	return json.NewDecoder(r).Decode(v)
+}
+
+// NewStreamCodec returns a JSON stream codec for T.
+// It is safe for concurrent use.
+func NewStreamCodec[T any]() encoding.StreamCodec[T] {
+	return encoding.StreamCodec[T]{
+		Encode: StreamEncoder[T],
+		Decode: StreamDecoder[T],
+	}
 }

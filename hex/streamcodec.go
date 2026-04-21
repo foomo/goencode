@@ -3,22 +3,18 @@ package hex
 import (
 	stdhex "encoding/hex"
 	"io"
+
+	encoding "github.com/foomo/goencode"
 )
 
-// StreamCodec is a StreamCodec[[]byte] backed by encoding/hex.
-// It is safe for concurrent use.
-type StreamCodec struct{}
-
-// NewStreamCodec returns a Hex stream serializer.
-func NewStreamCodec() *StreamCodec { return &StreamCodec{} }
-
-func (StreamCodec) Encode(w io.Writer, v []byte) error {
+// StreamEncoder encodes bytes to a hexadecimal stream.
+func StreamEncoder(w io.Writer, v []byte) error {
 	_, err := stdhex.NewEncoder(w).Write(v)
-
 	return err
 }
 
-func (StreamCodec) Decode(r io.Reader, v *[]byte) error {
+// StreamDecoder decodes bytes from a hexadecimal stream.
+func StreamDecoder(r io.Reader, v *[]byte) error {
 	data, err := io.ReadAll(stdhex.NewDecoder(r))
 	if err != nil {
 		return err
@@ -27,4 +23,13 @@ func (StreamCodec) Decode(r io.Reader, v *[]byte) error {
 	*v = data
 
 	return nil
+}
+
+// NewStreamCodec returns a Hex stream codec.
+// It is safe for concurrent use.
+func NewStreamCodec() encoding.StreamCodec[[]byte] {
+	return encoding.StreamCodec[[]byte]{
+		Encode: StreamEncoder,
+		Decode: StreamDecoder,
+	}
 }

@@ -1,21 +1,25 @@
 package yaml
 
 import (
+	encoding "github.com/foomo/goencode"
 	"go.yaml.in/yaml/v3"
 )
 
-// Codec is a Codec[T] backed by encoding/json.
-// It is zero-allocation on the encode path for small structs and safe for
-// concurrent use.
-type Codec[T any] struct{}
-
-// NewCodec returns a Codec codec for T.
-func NewCodec[T any]() Codec[T] { return Codec[T]{} }
-
-func (Codec[T]) Encode(v T) ([]byte, error) {
+// Encoder encodes T to YAML v3 bytes.
+func Encoder[T any](v T) ([]byte, error) {
 	return yaml.Marshal(v)
 }
 
-func (Codec[T]) Decode(b []byte, v *T) error {
+// Decoder decodes YAML v3 bytes into T.
+func Decoder[T any](b []byte, v *T) error {
 	return yaml.Unmarshal(b, v)
+}
+
+// NewCodec returns a YAML v3 codec for T.
+// It is safe for concurrent use.
+func NewCodec[T any]() encoding.Codec[T, []byte] {
+	return encoding.Codec[T, []byte]{
+		Encode: Encoder[T],
+		Decode: Decoder[T],
+	}
 }

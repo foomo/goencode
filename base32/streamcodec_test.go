@@ -7,7 +7,7 @@ import (
 	"github.com/foomo/goencode/base32"
 )
 
-func ExampleStreamCodec() {
+func ExampleNewStreamCodec() {
 	c := base32.NewStreamCodec()
 
 	var buf bytes.Buffer

@@ -7,7 +7,7 @@ import (
 	msgpack "github.com/foomo/goencode/msgpack/vmihailenco"
 )
 
-func ExampleStreamCodec() {
+func ExampleNewStreamCodec() {
 	type Data struct {
 		Name string `msgpack:"name"`
 	}

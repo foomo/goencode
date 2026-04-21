@@ -3,20 +3,17 @@ package pem
 import (
 	stdpem "encoding/pem"
 	"errors"
+
+	encoding "github.com/foomo/goencode"
 )
 
-// Codec is a Codec[*pem.Block] backed by encoding/pem.
-// It is safe for concurrent use.
-type Codec struct{}
-
-// NewCodec returns a PEM serializer.
-func NewCodec() *Codec { return &Codec{} }
-
-func (Codec) Encode(v *stdpem.Block) ([]byte, error) {
+// Encoder encodes a PEM block to bytes.
+func Encoder(v *stdpem.Block) ([]byte, error) {
 	return stdpem.EncodeToMemory(v), nil
 }
 
-func (Codec) Decode(b []byte, v **stdpem.Block) error {
+// Decoder decodes bytes into a PEM block.
+func Decoder(b []byte, v **stdpem.Block) error {
 	block, _ := stdpem.Decode(b)
 	if block == nil {
 		return errors.New("pem: no PEM block found")
@@ -25,4 +22,13 @@ func (Codec) Decode(b []byte, v **stdpem.Block) error {
 	*v = block
 
 	return nil
+}
+
+// NewCodec returns a PEM codec.
+// It is safe for concurrent use.
+func NewCodec() encoding.Codec[*stdpem.Block, []byte] {
+	return encoding.Codec[*stdpem.Block, []byte]{
+		Encode: Encoder,
+		Decode: Decoder,
+	}
 }

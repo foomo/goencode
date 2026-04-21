@@ -1,5 +1,4 @@
 package goencode
 
-type Encoder[T any] interface {
-	Encode(v T) error
-}
+// Encoder encodes source S to target T.
+type Encoder[S, T any] func(s S) (T, error)

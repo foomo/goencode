@@ -6,7 +6,7 @@ import (
 	"github.com/foomo/goencode/hex"
 )
 
-func ExampleCodec() {
+func ExampleNewCodec() {
 	c := hex.NewCodec()
 
 	encoded, err := c.Encode([]byte("hello"))

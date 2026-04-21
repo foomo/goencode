@@ -24,6 +24,7 @@ ifeq (, $(shell command -v mise))
 endif
 	@mise install
 
+.PHONY: .lefthook
 # Configure git hooks for lefthook
 .lefthook:
 	@lefthook install --reset-hooks-path
@@ -99,7 +100,7 @@ audit:
 	@echo "〉security audit"
 	#@trivy fs . --format table --severity HIGH,CRITICAL
 	@go install golang.org/x/vuln/cmd/govulncheck@latest
-	@go govulncheck ./...
+	@govulncheck ./...
 
 .PHONY: outdated
 ## Show outdated direct dependencies
@@ -152,7 +153,7 @@ godocs:
 .PHONY: help
 ## Show help text
 help:
-	@echo "goencode\n"
+	@echo "\ngoencode\n"
 	@echo "Usage:\n  make [task]"
 	@awk '{ \
 		if($$0 ~ /^### /){ \

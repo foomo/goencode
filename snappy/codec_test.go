@@ -3,16 +3,17 @@ package snappy_test
 import (
 	"fmt"
 
+	goencode "github.com/foomo/goencode"
 	json "github.com/foomo/goencode/json/v1"
 	"github.com/foomo/goencode/snappy"
 )
 
-func ExampleCodec() {
+func ExampleNewCodec() {
 	type Data struct {
 		Name string
 	}
 
-	c := snappy.NewCodec(json.NewCodec[Data]())
+	c := goencode.PipeCodec(json.NewCodec[Data](), snappy.NewCodec())
 
 	encoded, err := c.Encode(Data{Name: "example-123"})
 	if err != nil {

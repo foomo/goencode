@@ -3,13 +3,14 @@ package brotli_test
 import (
 	"testing"
 
+	goencode "github.com/foomo/goencode"
 	"github.com/foomo/goencode/brotli"
 	"github.com/foomo/goencode/internal/testdata"
-	"github.com/foomo/goencode/json/v1"
+	json "github.com/foomo/goencode/json/v1"
 )
 
 func BenchmarkCodec(b *testing.B) {
-	c := brotli.NewCodec(json.NewCodec[*testdata.User]())
+	c := goencode.PipeCodec(json.NewCodec[*testdata.User](), brotli.NewCodec())
 
 	b.Run("encode", func(b *testing.B) {
 		v := testdata.NewUser()
