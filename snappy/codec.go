@@ -5,22 +5,28 @@ import (
 	"github.com/golang/snappy"
 )
 
+// Encoder compresses bytes using Snappy.
+func Encoder(data []byte) ([]byte, error) {
+	return snappy.Encode(nil, data), nil
+}
+
+// Decoder decompresses Snappy bytes.
+func Decoder(data []byte, v *[]byte) error {
+	decoded, err := snappy.Decode(nil, data)
+	if err != nil {
+		return err
+	}
+
+	*v = decoded
+
+	return nil
+}
+
 // NewCodec returns a Snappy compression codec.
 // It is safe for concurrent use.
 func NewCodec() encoding.Codec[[]byte, []byte] {
 	return encoding.Codec[[]byte, []byte]{
-		Encode: func(data []byte) ([]byte, error) {
-			return snappy.Encode(nil, data), nil
-		},
-		Decode: func(data []byte, v *[]byte) error {
-			decoded, err := snappy.Decode(nil, data)
-			if err != nil {
-				return err
-			}
-
-			*v = decoded
-
-			return nil
-		},
+		Encode: Encoder,
+		Decode: Decoder,
 	}
 }
