@@ -17,9 +17,11 @@ func NewCodec[T any]() encoding.Codec[T, []byte] {
 			if m, ok := any(v).(msgp.Marshaler); ok {
 				return m.MarshalMsg(nil)
 			}
+
 			if m, ok := any(&v).(msgp.Marshaler); ok {
 				return m.MarshalMsg(nil)
 			}
+
 			return nil, fmt.Errorf("msgpack: %T does not implement msgp.Marshaler", v)
 		},
 		Decode: func(b []byte, v *T) error {
@@ -27,6 +29,7 @@ func NewCodec[T any]() encoding.Codec[T, []byte] {
 				_, err := u.UnmarshalMsg(b)
 				return err
 			}
+
 			return fmt.Errorf("msgpack: %T does not implement msgp.Unmarshaler", v)
 		},
 	}

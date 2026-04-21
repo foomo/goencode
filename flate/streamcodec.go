@@ -51,6 +51,7 @@ func NewStreamCodec(opts ...Option) encoding.StreamCodec[[]byte] {
 			}
 
 			*v = data
+
 			return nil
 		},
 	}

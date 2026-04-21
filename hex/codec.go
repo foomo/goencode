@@ -13,15 +13,19 @@ func NewCodec() encoding.Codec[[]byte, []byte] {
 		Encode: func(v []byte) ([]byte, error) {
 			dst := make([]byte, stdhex.EncodedLen(len(v)))
 			stdhex.Encode(dst, v)
+
 			return dst, nil
 		},
 		Decode: func(b []byte, v *[]byte) error {
 			dst := make([]byte, stdhex.DecodedLen(len(b)))
+
 			n, err := stdhex.Decode(dst, b)
 			if err != nil {
 				return err
 			}
+
 			*v = dst[:n]
+
 			return nil
 		},
 	}

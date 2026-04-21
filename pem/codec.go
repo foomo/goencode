@@ -19,7 +19,9 @@ func NewCodec() encoding.Codec[*stdpem.Block, []byte] {
 			if block == nil {
 				return errors.New("pem: no PEM block found")
 			}
+
 			*v = block
+
 			return nil
 		},
 	}

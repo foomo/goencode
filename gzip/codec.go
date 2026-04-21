@@ -62,6 +62,7 @@ func NewCodec(opts ...Option) encoding.Codec[[]byte, []byte] {
 			}
 
 			*v = decoded
+
 			return nil
 		},
 	}

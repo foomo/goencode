@@ -17,7 +17,9 @@ func NewCodec() encoding.Codec[[]byte, []byte] {
 			if err != nil {
 				return err
 			}
+
 			*v = decoded
+
 			return nil
 		},
 	}

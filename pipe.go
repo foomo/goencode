@@ -8,6 +8,7 @@ func PipeEncoder[A, B, C any](first Encoder[A, B], second Encoder[B, C]) Encoder
 			var zero C
 			return zero, err
 		}
+
 		return second(b)
 	}
 }
@@ -19,6 +20,7 @@ func PipeDecoder[A, B, C any](first Decoder[A, B], second Decoder[B, C]) Decoder
 		if err := second(c, &b); err != nil {
 			return err
 		}
+
 		return first(b, a)
 	}
 }

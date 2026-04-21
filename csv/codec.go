@@ -34,7 +34,9 @@ func NewCodec() encoding.Codec[[][]string, []byte] {
 			if err != nil {
 				return err
 			}
+
 			*v = records
+
 			return nil
 		},
 	}

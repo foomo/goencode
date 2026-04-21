@@ -22,6 +22,7 @@ func TestPipeEncoder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+
 	if string(got) != "42" {
 		t.Fatalf("got %q, want %q", string(got), "42")
 	}
@@ -50,7 +51,9 @@ func TestPipeDecoder(t *testing.T) {
 		if err != nil {
 			return err
 		}
+
 		*i = v
+
 		return nil
 	})
 	bytesToStr := goencode.Decoder[string, []byte](func(b []byte, s *string) error {
@@ -64,6 +67,7 @@ func TestPipeDecoder(t *testing.T) {
 	if err := piped([]byte("42"), &got); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+
 	if got != 42 {
 		t.Fatalf("got %d, want 42", got)
 	}
@@ -79,7 +83,9 @@ func TestPipeCodec(t *testing.T) {
 			if err != nil {
 				return err
 			}
+
 			*i = v
+
 			return nil
 		},
 	}
@@ -99,6 +105,7 @@ func TestPipeCodec(t *testing.T) {
 	if err != nil {
 		t.Fatalf("encode error: %v", err)
 	}
+
 	if string(encoded) != "42" {
 		t.Fatalf("encoded: got %q, want %q", string(encoded), "42")
 	}
@@ -107,6 +114,7 @@ func TestPipeCodec(t *testing.T) {
 	if err := piped.Decode(encoded, &decoded); err != nil {
 		t.Fatalf("decode error: %v", err)
 	}
+
 	if decoded != 42 {
 		t.Fatalf("decoded: got %d, want 42", decoded)
 	}

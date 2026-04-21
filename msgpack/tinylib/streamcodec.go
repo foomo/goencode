@@ -18,15 +18,18 @@ func NewStreamCodec[T any]() encoding.StreamCodec[T] {
 			if e, ok := any(v).(msgp.Encodable); ok {
 				return msgp.Encode(w, e)
 			}
+
 			if e, ok := any(&v).(msgp.Encodable); ok {
 				return msgp.Encode(w, e)
 			}
+
 			return fmt.Errorf("msgpack: %T does not implement msgp.Encodable", v)
 		},
 		Decode: func(r io.Reader, v *T) error {
 			if d, ok := any(v).(msgp.Decodable); ok {
 				return msgp.Decode(r, d)
 			}
+
 			return fmt.Errorf("msgpack: %T does not implement msgp.Decodable", v)
 		},
 	}

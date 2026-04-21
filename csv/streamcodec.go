@@ -16,7 +16,9 @@ func NewStreamCodec() encoding.StreamCodec[[][]string] {
 			if err := cw.WriteAll(v); err != nil {
 				return err
 			}
+
 			cw.Flush()
+
 			return cw.Error()
 		},
 		Decode: func(r io.Reader, v *[][]string) error {
@@ -24,7 +26,9 @@ func NewStreamCodec() encoding.StreamCodec[[][]string] {
 			if err != nil {
 				return err
 			}
+
 			*v = records
+
 			return nil
 		},
 	}

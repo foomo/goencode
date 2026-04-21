@@ -11,6 +11,7 @@ func ExampleNewStreamCodec() {
 	c := zstd.NewStreamCodec()
 
 	input := []byte("hello zstd stream")
+
 	var buf bytes.Buffer
 	if err := c.Encode(&buf, input); err != nil {
 		fmt.Printf("Encode failed: %v\n", err)

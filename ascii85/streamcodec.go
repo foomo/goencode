@@ -15,6 +15,7 @@ func NewStreamCodec() encoding.StreamCodec[[]byte] {
 			dst := make([]byte, stdascii85.MaxEncodedLen(len(v)))
 			n := stdascii85.Encode(dst, v)
 			_, err := w.Write(dst[:n])
+
 			return err
 		},
 		Decode: func(r io.Reader, v *[]byte) error {
@@ -22,7 +23,9 @@ func NewStreamCodec() encoding.StreamCodec[[]byte] {
 			if err != nil {
 				return err
 			}
+
 			*v = data
+
 			return nil
 		},
 	}

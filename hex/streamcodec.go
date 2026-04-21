@@ -20,7 +20,9 @@ func NewStreamCodec() encoding.StreamCodec[[]byte] {
 			if err != nil {
 				return err
 			}
+
 			*v = data
+
 			return nil
 		},
 	}
