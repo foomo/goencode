@@ -6,7 +6,7 @@ import (
 	"github.com/foomo/goencode/toml"
 )
 
-func ExampleCodec() {
+func ExampleNewCodec() {
 	type Data struct {
 		Name string
 	}
