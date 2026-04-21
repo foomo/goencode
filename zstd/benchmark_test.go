@@ -3,13 +3,14 @@ package zstd_test
 import (
 	"testing"
 
+	goencode "github.com/foomo/goencode"
 	"github.com/foomo/goencode/internal/testdata"
-	"github.com/foomo/goencode/json/v1"
+	json "github.com/foomo/goencode/json/v1"
 	"github.com/foomo/goencode/zstd"
 )
 
 func BenchmarkCodec(b *testing.B) {
-	c := zstd.NewCodec(json.NewCodec[*testdata.User]())
+	c := goencode.PipeCodec(json.NewCodec[*testdata.User](), zstd.NewCodec())
 
 	b.Run("encode", func(b *testing.B) {
 		v := testdata.NewUser()

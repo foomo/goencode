@@ -3,13 +3,14 @@ package gzip_test
 import (
 	"testing"
 
+	goencode "github.com/foomo/goencode"
 	"github.com/foomo/goencode/gzip"
 	"github.com/foomo/goencode/internal/testdata"
 	json "github.com/foomo/goencode/json/v1"
 )
 
 func BenchmarkCodec(b *testing.B) {
-	c := gzip.NewCodec(json.NewCodec[*testdata.User]())
+	c := goencode.PipeCodec(json.NewCodec[*testdata.User](), gzip.NewCodec())
 
 	b.Run("encode", func(b *testing.B) {
 		v := testdata.NewUser()

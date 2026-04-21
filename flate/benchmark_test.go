@@ -3,13 +3,14 @@ package flate_test
 import (
 	"testing"
 
+	goencode "github.com/foomo/goencode"
 	"github.com/foomo/goencode/flate"
 	"github.com/foomo/goencode/internal/testdata"
 	json "github.com/foomo/goencode/json/v1"
 )
 
 func BenchmarkCodec(b *testing.B) {
-	c := flate.NewCodec(json.NewCodec[*testdata.User]())
+	c := goencode.PipeCodec(json.NewCodec[*testdata.User](), flate.NewCodec())
 
 	b.Run("encode", func(b *testing.B) {
 		v := testdata.NewUser()

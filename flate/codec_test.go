@@ -3,16 +3,17 @@ package flate_test
 import (
 	"fmt"
 
+	goencode "github.com/foomo/goencode"
 	"github.com/foomo/goencode/flate"
-	"github.com/foomo/goencode/json/v1"
+	json "github.com/foomo/goencode/json/v1"
 )
 
-func ExampleCodec() {
+func ExampleNewCodec() {
 	type Data struct {
 		Name string
 	}
 
-	c := flate.NewCodec(json.NewCodec[Data]())
+	c := goencode.PipeCodec(json.NewCodec[Data](), flate.NewCodec())
 
 	encoded, err := c.Encode(Data{Name: "example-123"})
 	if err != nil {

@@ -7,16 +7,9 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-// StreamCodec is a StreamCodec[T] that applies Zstandard compression on top of another StreamCodec[T].
+// NewStreamCodec returns a Zstandard compression stream codec.
 // It is safe for concurrent use.
-type StreamCodec[T any] struct {
-	codec          encoding.StreamCodec[T]
-	level          zstd.EncoderLevel
-	maxDecodedSize int64
-}
-
-// NewStreamCodec returns a Zstandard compression stream codec that delegates serialization to codec.
-func NewStreamCodec[T any](codec encoding.StreamCodec[T], opts ...Option) *StreamCodec[T] {
+func NewStreamCodec(opts ...Option) encoding.StreamCodec[[]byte] {
 	o := options{
 		level: zstd.SpeedDefault,
 	}
@@ -24,38 +17,39 @@ func NewStreamCodec[T any](codec encoding.StreamCodec[T], opts ...Option) *Strea
 		opt(&o)
 	}
 
-	return &StreamCodec[T]{
-		codec:          codec,
-		level:          o.level,
-		maxDecodedSize: o.maxDecodedSize,
+	return encoding.StreamCodec[[]byte]{
+		Encode: func(w io.Writer, data []byte) error {
+			zw, err := zstd.NewWriter(w, zstd.WithEncoderLevel(o.level))
+			if err != nil {
+				return err
+			}
+
+			if _, err := zw.Write(data); err != nil {
+				zw.Close()
+				return err
+			}
+
+			return zw.Close()
+		},
+		Decode: func(r io.Reader, v *[]byte) error {
+			dopts := []zstd.DOption{}
+			if o.maxDecodedSize > 0 {
+				dopts = append(dopts, zstd.WithDecoderMaxMemory(uint64(o.maxDecodedSize)))
+			}
+
+			zr, err := zstd.NewReader(r, dopts...)
+			if err != nil {
+				return err
+			}
+			defer zr.Close()
+
+			data, err := io.ReadAll(zr)
+			if err != nil {
+				return err
+			}
+
+			*v = data
+			return nil
+		},
 	}
-}
-
-func (c *StreamCodec[T]) Encode(w io.Writer, v T) error {
-	zw, err := zstd.NewWriter(w, zstd.WithEncoderLevel(c.level))
-	if err != nil {
-		return err
-	}
-
-	if err := c.codec.Encode(zw, v); err != nil {
-		zw.Close()
-		return err
-	}
-
-	return zw.Close()
-}
-
-func (c *StreamCodec[T]) Decode(r io.Reader, v *T) error {
-	opts := []zstd.DOption{}
-	if c.maxDecodedSize > 0 {
-		opts = append(opts, zstd.WithDecoderMaxMemory(uint64(c.maxDecodedSize)))
-	}
-
-	zr, err := zstd.NewReader(r, opts...)
-	if err != nil {
-		return err
-	}
-	defer zr.Close()
-
-	return c.codec.Decode(zr, v)
 }

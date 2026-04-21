@@ -5,29 +5,25 @@ import (
 	"fmt"
 
 	"github.com/foomo/goencode/brotli"
-	"github.com/foomo/goencode/json/v1"
 )
 
-func ExampleStreamCodec() {
-	type Data struct {
-		Name string
-	}
+func ExampleNewStreamCodec() {
+	c := brotli.NewStreamCodec()
 
-	c := brotli.NewStreamCodec(json.NewStreamCodec[Data]())
-
+	input := []byte("hello brotli stream")
 	var buf bytes.Buffer
-	if err := c.Encode(&buf, Data{Name: "example-123"}); err != nil {
+	if err := c.Encode(&buf, input); err != nil {
 		fmt.Printf("Encode failed: %v\n", err)
 		return
 	}
 
-	var decoded Data
+	var decoded []byte
 	if err := c.Decode(&buf, &decoded); err != nil {
 		fmt.Printf("Decode failed: %v\n", err)
 		return
 	}
 
-	fmt.Printf("Decoded Name: %s\n", decoded.Name)
+	fmt.Printf("Decoded: %s\n", string(decoded))
 	// Output:
-	// Decoded Name: example-123
+	// Decoded: hello brotli stream
 }

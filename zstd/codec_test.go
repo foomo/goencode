@@ -3,16 +3,17 @@ package zstd_test
 import (
 	"fmt"
 
-	"github.com/foomo/goencode/json/v1"
+	goencode "github.com/foomo/goencode"
+	json "github.com/foomo/goencode/json/v1"
 	"github.com/foomo/goencode/zstd"
 )
 
-func ExampleCodec() {
+func ExampleNewCodec() {
 	type Data struct {
 		Name string
 	}
 
-	c := zstd.NewCodec(json.NewCodec[Data]())
+	c := goencode.PipeCodec(json.NewCodec[Data](), zstd.NewCodec())
 
 	encoded, err := c.Encode(Data{Name: "example-123"})
 	if err != nil {
