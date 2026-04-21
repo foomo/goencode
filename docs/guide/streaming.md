@@ -1,27 +1,22 @@
 # Streaming
 
-`StreamCodec[T]` encodes to an `io.Writer` and decodes from an `io.Reader`. Use it when working with streams — HTTP bodies, files, network connections, or pipelines — to avoid buffering entire payloads in memory.
+`StreamCodec[S]` encodes to an `io.Writer` and decodes from an `io.Reader`. Use it when working with streams — HTTP bodies, files, network connections, or pipelines — to avoid buffering entire payloads in memory.
 
-## Interface
+## Types
 
 ```go
-type StreamCodec[T any] interface {
-    Encode(w io.Writer, v T) error
-    Decode(r io.Reader, v *T) error
+// Stream function types
+type StreamEncoder[S any] func(w io.Writer, s S) error
+type StreamDecoder[S any] func(r io.Reader, s *S) error
+
+// StreamCodec bundles a StreamEncoder and StreamDecoder pair.
+type StreamCodec[S any] struct {
+    Encode StreamEncoder[S]
+    Decode StreamDecoder[S]
 }
 ```
 
-The root package also defines `Encoder[T]` and `Decoder[T]` for stateful encoder/decoder pairs:
-
-```go
-type Encoder[T any] interface {
-    Encode(v T) error
-}
-
-type Decoder[T any] interface {
-    Decode(v any) error
-}
-```
+Each serialization package exports standalone `StreamEncoder` and `StreamDecoder` functions alongside the `NewStreamCodec` constructor.
 
 ## JSON Streaming
 
@@ -101,29 +96,28 @@ _ = c.Decode(&buf, &decoded) // [!code highlight]
 fmt.Println(decoded) // [[name age] [Alice 30]]
 ```
 
-## Compressed Streams
+## Compression Streaming
 
-Stream codecs compose the same way as byte codecs — compression wrappers accept an inner `StreamCodec[T]`:
+Compression stream codecs are standalone `StreamCodec[[]byte]` — they compress and decompress raw bytes over streams:
 
 ```go
 import (
     "github.com/foomo/goencode/gzip"
-    "github.com/foomo/goencode/json/v1"
 )
 
-type Payload struct {
-    Items []string `json:"items"`
-}
+sc := gzip.NewStreamCodec() // StreamCodec[[]byte] // [!code highlight]
 
-sc := gzip.NewStreamCodec[Payload](json.NewStreamCodec[Payload]()) // [!code highlight]
+// Write gzip-compressed bytes to any io.Writer
+err := sc.Encode(writer, rawBytes)
 
-// Write gzip-compressed JSON to any io.Writer
-err := sc.Encode(writer, payload)
-
-// Read gzip-compressed JSON from any io.Reader
-var p Payload
-err = sc.Decode(reader, &p)
+// Read gzip-decompressed bytes from any io.Reader
+var decoded []byte
+err = sc.Decode(reader, &decoded)
 ```
+
+::: tip
+For combined serialization + compression (e.g., JSON → gzip), use the byte-oriented `PipeCodec` approach instead. See [Composing Codecs](/guide/composition) for details.
+:::
 
 ## HTTP Example
 

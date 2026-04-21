@@ -1,9 +1,9 @@
 # File Codec
 
-The `file` package wraps any `Codec[T]` or `StreamCodec[T]` to add atomic file persistence. It writes to a temporary file first, then renames it into place — preventing partial writes if the process crashes mid-write.
+The `file` package wraps any `Codec[T, []byte]` or `StreamCodec[T]` to add atomic file persistence. It writes to a temporary file first, then renames it into place — preventing partial writes if the process crashes mid-write.
 
 ::: warning
-The file codec has a different method signature from `Codec[T]` — it uses `path string` instead of `[]byte`. It does not satisfy the `Codec[T]` or `StreamCodec[T]` interfaces.
+The file codec has a different method signature — it uses `path string` instead of `[]byte` or `io.Writer`.
 :::
 
 ## Basic Usage
@@ -54,7 +54,7 @@ fc := file.NewCodec[Secrets](
 
 ## Stream Variant
 
-`file.NewStreamCodec[T]` wraps a `StreamCodec[T]` instead. This streams the encoded data directly to the temp file without buffering the full payload in memory.
+`file.NewStreamCodec[T]` wraps a `StreamCodec[T]` struct instead. This streams the encoded data directly to the temp file without buffering the full payload in memory.
 
 ```go
 fsc := file.NewStreamCodec[Config](json.NewStreamCodec[Config]()) // [!code highlight]
@@ -67,10 +67,11 @@ err = fsc.Decode("config.json", &loaded)
 
 ## Composed Example
 
-Combine serialization, compression, and file persistence:
+Combine serialization, compression, and file persistence via `PipeCodec`:
 
 ```go
 import (
+    "github.com/foomo/goencode"
     "github.com/foomo/goencode/file"
     "github.com/foomo/goencode/gzip"
     "github.com/foomo/goencode/json/v1"
@@ -82,10 +83,7 @@ type State struct {
 }
 
 fc := file.NewCodec[State](
-    gzip.NewCodec[State](
-        json.NewCodec[State](),
-        gzip.WithLevel(gzip.BestSpeed),
-    ),
+    goencode.PipeCodec(json.NewCodec[State](), gzip.NewCodec(gzip.WithLevel(gzip.BestSpeed))),
     file.WithPermissions(0o600),
 )
 
