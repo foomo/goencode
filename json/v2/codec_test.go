@@ -6,7 +6,7 @@ import (
 	json "github.com/foomo/goencode/json/v2"
 )
 
-func ExampleCodec() {
+func ExampleNewCodec() {
 	type Data struct {
 		Name string
 	}
