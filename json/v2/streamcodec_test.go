@@ -1,10 +1,10 @@
-package toml_test
+package json_test
 
 import (
 	"bytes"
 	"fmt"
 
-	"github.com/foomo/goencode/toml"
+	json "github.com/foomo/goencode/json/v2"
 )
 
 func ExampleNewStreamCodec() {
@@ -12,7 +12,7 @@ func ExampleNewStreamCodec() {
 		Name string
 	}
 
-	c := toml.NewStreamCodec[Data]()
+	c := json.NewStreamCodec[Data]()
 
 	var buf bytes.Buffer
 	if err := c.Encode(&buf, Data{Name: "example-123"}); err != nil {
